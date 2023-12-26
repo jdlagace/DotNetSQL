@@ -18,6 +18,21 @@ FROM build AS publish
 RUN dotnet publish "DotNetSQL.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
+
+ENV ASPNETCORE_URLS="http://+:8080"
+
+# Switch to root for changing dir ownership/permissions
+USER 0
+
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+RUN chown -R 1001:0 /app && chmod -R og+rwx /app
+
+# random UID nonroot
+USER 1001
+
+# Expose port 80 for the app
+EXPOSE 8080
+
 ENTRYPOINT ["dotnet", "DotNetSQL.dll"]
